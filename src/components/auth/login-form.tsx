@@ -1,6 +1,6 @@
 'use client';
 
-import { FaceIcon, LogIn } from 'lucide-react';
+import { Camera, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -152,7 +152,7 @@ export default function LoginForm() {
                   type="button"
                   disabled={isSigningIn}
                 >
-                  <FaceIcon className="mr-2 h-4 w-4" /> Sign in with Facial Login
+                  <Camera className="mr-2 h-4 w-4" /> Sign in with Facial Login
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[480px]">
