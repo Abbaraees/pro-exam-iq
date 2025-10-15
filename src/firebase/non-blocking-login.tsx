@@ -21,8 +21,19 @@ export function initiateAnonymousSignIn(authInstance: Auth, onError?: (error: Fi
 }
 
 /** Initiate email/password sign-up (non-blocking). */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string, onError?: (error: FirebaseError) => void): void {
+export function initiateEmailSignUp(
+    authInstance: Auth, 
+    email: string, 
+    password: string, 
+    onError?: (error: FirebaseError) => void,
+    onSuccess?: () => void
+): void {
   createUserWithEmailAndPassword(authInstance, email, password)
+    .then(() => {
+        if (onSuccess) {
+            onSuccess();
+        }
+    })
     .catch((error: FirebaseError) => {
         if (onError) {
           onError(error);
