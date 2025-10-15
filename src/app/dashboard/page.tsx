@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,6 +15,23 @@ import { BookOpenCheck, History } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 flex-1">
       <div className="space-y-4">
