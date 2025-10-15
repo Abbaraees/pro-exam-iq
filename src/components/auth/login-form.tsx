@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
-import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { useUser } from '@/firebase';
@@ -27,6 +27,7 @@ export default function LoginForm() {
   const { user, isUserLoading } = useUser();
   const [email, setEmail] = useState('tester@proexam.com');
   const [password, setPassword] = useState('password123');
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -34,10 +35,37 @@ export default function LoginForm() {
     }
   }, [user, isUserLoading, router]);
 
+  const handleLoginError = (error: any) => {
+    setIsSigningIn(false);
+    let description = "An unexpected error occurred. Please try again.";
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          description = "Invalid email or password. Please check your credentials and try again.";
+          break;
+        case 'auth/invalid-email':
+          description = "The email address is not valid.";
+          break;
+        case 'auth/network-request-failed':
+          description = "Network error. Please check your internet connection.";
+          break;
+        default:
+          description = `An error occurred: ${error.message}`;
+      }
+    }
+    toast({
+      title: 'Sign In Failed',
+      description: description,
+      variant: 'destructive',
+    });
+  }
 
   const handleEmailLogin = (e: FormEvent) => {
     e.preventDefault();
-    initiateEmailSignIn(auth, email, password);
+    setIsSigningIn(true);
+    initiateEmailSignIn(auth, email, password, handleLoginError);
   };
 
   const handleBiometricLogin = () => {
@@ -77,6 +105,7 @@ export default function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isSigningIn}
             />
           </div>
           <div className="grid gap-2">
@@ -92,17 +121,28 @@ export default function LoginForm() {
               required 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isSigningIn}
             />
           </div>
           <div className="flex flex-col gap-2 pt-2">
-            <Button type="submit" className="w-full">
-              <LogIn className="mr-2 h-4 w-4" /> Sign In
+            <Button type="submit" className="w-full" disabled={isSigningIn}>
+              {isSigningIn ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary-foreground mr-2"></div>
+                  Signing In...
+                </>
+              ) : (
+                <>
+                  <LogIn className="mr-2 h-4 w-4" /> Sign In
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
               className="w-full"
               type="button"
               onClick={handleBiometricLogin}
+              disabled={isSigningIn}
             >
               <Fingerprint className="mr-2 h-4 w-4" /> Sign in with Biometrics
             </Button>
