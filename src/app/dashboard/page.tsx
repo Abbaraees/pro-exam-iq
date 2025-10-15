@@ -65,10 +65,10 @@ export default function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
-        <Card className="bg-muted/50 cursor-not-allowed opacity-60">
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <History className="h-6 w-6 text-muted-foreground" />
+              <History className="h-6 w-6 text-primary" />
               Test History
             </CardTitle>
             <CardDescription>
@@ -77,9 +77,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
              <p className="text-sm text-muted-foreground mb-4">
-              This feature is coming soon.
+              See your scores and review answers from previous tests.
             </p>
-            <Button disabled>View History</Button>
+            <Button asChild>
+              <Link href="/history">View History</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
