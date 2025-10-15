@@ -1,6 +1,6 @@
 'use client';
 
-import { Fingerprint, LogIn } from 'lucide-react';
+import { FaceIcon, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,14 @@ import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { useUser } from '@/firebase';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import FacialLoginForm from './facial-login-form';
 
 
 export default function LoginForm() {
@@ -28,6 +36,8 @@ export default function LoginForm() {
   const [email, setEmail] = useState('tester@proexam.com');
   const [password, setPassword] = useState('password123');
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isFacialLoginOpen, setIsFacialLoginOpen] = useState(false);
+
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -62,18 +72,15 @@ export default function LoginForm() {
     });
   }
 
+  const handleFacialLoginSuccess = () => {
+    setIsFacialLoginOpen(false);
+    // The useEffect will redirect to dashboard
+  }
+
   const handleEmailLogin = (e: FormEvent) => {
     e.preventDefault();
     setIsSigningIn(true);
     initiateEmailSignIn(auth, email, password, handleLoginError);
-  };
-
-  const handleBiometricLogin = () => {
-    toast({
-      title: 'Feature Not Implemented',
-      description: 'Biometric login is not available in this demo.',
-      variant: 'default',
-    });
   };
 
   if (isUserLoading || user) {
@@ -137,15 +144,24 @@ export default function LoginForm() {
                 </>
               )}
             </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              type="button"
-              onClick={handleBiometricLogin}
-              disabled={isSigningIn}
-            >
-              <Fingerprint className="mr-2 h-4 w-4" /> Sign in with Biometrics
-            </Button>
+             <Dialog open={isFacialLoginOpen} onOpenChange={setIsFacialLoginOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  type="button"
+                  disabled={isSigningIn}
+                >
+                  <FaceIcon className="mr-2 h-4 w-4" /> Sign in with Facial Login
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[480px]">
+                <DialogHeader>
+                  <DialogTitle>Facial Login</DialogTitle>
+                </DialogHeader>
+                <FacialLoginForm onLoginSuccess={handleFacialLoginSuccess} />
+              </DialogContent>
+            </Dialog>
           </div>
         </form>
         <div className="mt-4 text-center text-sm">

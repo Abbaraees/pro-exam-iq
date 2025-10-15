@@ -8,6 +8,10 @@ import {
   interpretResults,
   InterpretResultsInput,
 } from '@/ai/flows/intelligent-result-interpretation';
+import {
+  verifyFace,
+  FaceVerificationInput,
+} from '@/ai/flows/face-verification';
 
 export async function generateTest(input: PersonalizedTestInput) {
   try {
@@ -30,5 +34,15 @@ export async function getInterpretation(input: InterpretResultsInput) {
       suggestions:
         'Could not generate suggestions due to an error.',
     };
+  }
+}
+
+export async function checkFace(input: FaceVerificationInput) {
+  try {
+    const result = await verifyFace(input);
+    return result;
+  } catch (error) {
+    console.error('Error verifying face:', error);
+    return { isFaceDetected: false };
   }
 }
