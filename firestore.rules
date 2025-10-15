@@ -1,0 +1,125 @@
+/**
+ * @fileOverview
+ * This ruleset enforces a strict user-ownership model for private data while allowing public access to shared resources.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles; only the user can access their own profile.
+ * - /tests/{testId}: Stores publicly accessible test definitions.
+ * - /questions/{questionId}: Stores publicly accessible questions.
+ * - /users/{userId}/testSessions/{testSessionId}: Stores test session data; only the user can access their own sessions.
+ * - /users/{userId}/testSessions/{testSessionId}/answers/{answerId}: Stores answers; access is restricted to the owning user through path ownership.
+ *
+ * Key Security Decisions:
+ * - User listing is disallowed.
+ * - Tests and Questions are publicly readable.
+ * - Write access to user-owned data is strictly limited to the owning user.
+ * - Authorization decisions are made based on path-based ownership, avoiding `get()` calls.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Manages user profiles. Only the user can create, read, update, or delete their own profile.
+     * @path /users/{userId}
+     * @allow (create) - User A can create their profile: request.auth.uid == 'user_a' and request.resource.data.id == 'user_a'
+     * @allow (get, list, update, delete) - User A can read/update/delete their profile: request.auth.uid == 'user_a'
+     * @deny (create) - User A cannot create a profile for User B: request.auth.uid == 'user_a' and request.resource.data.id == 'user_b'
+     * @deny (get, list, update, delete) - User A cannot read/update/delete User B's profile: request.auth.uid == 'user_a'
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages test definitions. Tests are publicly readable, but write operations are disallowed.
+     * @path /tests/{testId}
+     * @allow (get, list) - Any user can read the test.
+     * @deny (create, update, delete) - No user can create, update, or delete a test.
+     * @principle Allows public read access to test definitions; write access is disabled for prototyping.
+     */
+    match /tests/{testId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages questions. Questions are publicly readable, but write operations are disallowed.
+     * @path /questions/{questionId}
+     * @allow (get, list) - Any user can read the question.
+     * @deny (create, update, delete) - No user can create, update, or delete a question.
+     * @principle Allows public read access to questions; write access is disabled for prototyping.
+     */
+    match /questions/{questionId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages test session data. Only the user can create, read, update, or delete their own test sessions.
+     * @path /users/{userId}/testSessions/{testSessionId}
+     * @allow (create) - User A can create a test session for themselves: request.auth.uid == 'user_a' and request.resource.data.userId == 'user_a'
+     * @allow (get, list, update, delete) - User A can read/update/delete their own test session: request.auth.uid == 'user_a'
+     * @deny (create) - User A cannot create a test session for User B: request.auth.uid == 'user_a' and request.resource.data.userId == 'user_b'
+     * @deny (get, list, update, delete) - User A cannot read/update/delete User B's test session: request.auth.uid == 'user_a'
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/testSessions/{testSessionId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages answers within a test session. Only the user who owns the test session can create, read, update, or delete answers.
+     * @path /users/{userId}/testSessions/{testSessionId}/answers/{answerId}
+     * @allow (create) - User A can create an answer in their test session: request.auth.uid == 'user_a'
+     * @allow (get, list, update, delete) - User A can read/update/delete answers in their test session: request.auth.uid == 'user_a'
+     * @deny (create) - User A cannot create an answer in User B's test session: request.auth.uid == 'user_a'
+     * @deny (get, list, update, delete) - User A cannot read/update/delete answers in User B's test session: request.auth.uid == 'user_a'
+     * @principle Enforces document ownership for all operations via path-based rules.
+     */
+    match /users/{userId}/testSessions/{testSessionId}/answers/{answerId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
